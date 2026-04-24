@@ -1,0 +1,39 @@
+{
+    "name": "yourvendor/ph-salary-grade",
+    "description": "Philippine Government Salary Grade schedule based on NBC No. 601 (2026). Look up monthly salaries by grade and step.",
+    "keywords": ["philippines", "salary grade", "NBC 601", "DBM", "government salary", "salary schedule"],
+    "homepage": "https://github.com/yourvendor/ph-salary-grade",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Your Name",
+            "email": "you@example.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "smalot/pdfparser": "^2.0"
+    },
+    "suggest": {
+        "smalot/pdfparser": "Required if pdftotext (poppler-utils) is not installed on your system"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhSalaryGrade\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PhSalaryGrade\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
