@@ -1,14 +1,16 @@
 {
-    "name": "yourvendor/ph-salary-grade",
-    "description": "Philippine Government Salary Grade schedule based on NBC No. 601 (2026). Look up monthly salaries by grade and step.",
-    "keywords": ["philippines", "salary grade", "NBC 601", "DBM", "government salary", "salary schedule"],
-    "homepage": "https://github.com/yourvendor/ph-salary-grade",
+    "name": "innonazarene/dbm-salary-parser",
+    "description": "Salary Grade schedule parser. Look up monthly salaries by grade and step.",
+    "keywords": [
+        "salary grade"
+    ],
+    "homepage": "https://github.com/innonazarene/dbm-salary-parser",
     "license": "MIT",
     "type": "library",
     "authors": [
         {
-            "name": "Your Name",
-            "email": "you@example.com"
+            "name": "Tom Ramos Pedales",
+            "email": "pedales.rustom@gmail.com"
         }
     ],
     "require": {

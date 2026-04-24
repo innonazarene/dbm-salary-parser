@@ -4,7 +4,7 @@
          bootstrap="vendor/autoload.php"
          colors="true">
     <testsuites>
-        <testsuite name="ph-salary-grade">
+        <testsuite name="dbm-salary-parser">
             <directory>tests</directory>
         </testsuite>
     </testsuites>
