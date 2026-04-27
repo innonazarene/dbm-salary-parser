@@ -51,6 +51,10 @@ use PhSalaryGrade\SalaryGradeParser;
 // From a PDF file — extracts text then parses the salary table
 $schedule = SalaryGradeParser::parseFile('/path/to/nbc601.pdf');
 
+// Parse a specific table region (e.g. "First Class" in LGU circulars)
+// The parser will skip everything until it finds the specified keyword
+$firstClassSchedule = SalaryGradeParser::parseFile('/path/to/lbc165.pdf', 'First Class');
+
 // $schedule is keyed by salary grade, each value is an array of step amounts
 // [
 //   1  => [14061, 14164, 14278, 14393, 14509, 14626, 14743, 14862],
@@ -74,6 +78,9 @@ use PhSalaryGrade\SalaryGradeParser;
 
 $text = file_get_contents('salary_text.txt');
 $schedule = SalaryGradeParser::parse($text);
+
+// Or with a keyword to target a specific table
+$schedule = SalaryGradeParser::parse($text, 'Special Cities');
 ```
 
 ### Extract text from PDF only

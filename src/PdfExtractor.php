@@ -45,7 +45,8 @@ class PdfExtractor
 
     private static function hasPdfToText(): bool
     {
-        $out = shell_exec('which pdftotext 2>/dev/null');
+        $command = (DIRECTORY_SEPARATOR === '\\') ? 'where pdftotext 2>nul' : 'which pdftotext 2>/dev/null';
+        $out = shell_exec($command);
         return ! empty(trim((string) $out));
     }
 

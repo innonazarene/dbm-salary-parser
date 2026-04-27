@@ -29,15 +29,27 @@ class SalaryGradeParser
      * @return array<int, array<string, int|null>>
      * @throws InvalidArgumentException
      */
-    public static function parse(string $text): array
+    public static function parse(string $text, ?string $keyword = null): array
     {
         $lines  = self::normalizeLines($text);
         $seen   = [];
         $result = [];
 
+        $foundKeyword = ($keyword === null);
+
         foreach ($lines as $line) {
+            // Wait until we find the keyword if specified
+            if (! $foundKeyword) {
+                if (stripos($line, $keyword) !== false) {
+                    $foundKeyword = true;
+                }
+                continue;
+            }
+
             $row = self::parseLine($line);
             if ($row === null) {
+                // If we've started parsing a table and we see another table header,
+                // we might want to stop, but the $seen check naturally handles duplicates.
                 continue;
             }
 
@@ -69,26 +81,26 @@ class SalaryGradeParser
      * @param  string  $path
      * @return array<int, array<string, int|null>>
      */
-    public static function parseFile(string $path): array
+    public static function parseFile(string $path, ?string $keyword = null): array
     {
         $text = PdfExtractor::extract($path);
-        return self::parse($text);
+        return self::parse($text, $keyword);
     }
 
     /**
      * Parse raw text and return a JSON string.
      */
-    public static function toJson(string $text): string
+    public static function toJson(string $text, ?string $keyword = null): string
     {
-        return json_encode(self::parse($text), JSON_PRETTY_PRINT);
+        return json_encode(self::parse($text, $keyword), JSON_PRETTY_PRINT);
     }
 
     /**
      * Parse a PDF file and return a JSON string.
      */
-    public static function fileToJson(string $path): string
+    public static function fileToJson(string $path, ?string $keyword = null): string
     {
-        return json_encode(self::parseFile($path), JSON_PRETTY_PRINT);
+        return json_encode(self::parseFile($path, $keyword), JSON_PRETTY_PRINT);
     }
 
     // -------------------------------------------------------------------------
