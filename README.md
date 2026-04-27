@@ -1,6 +1,4 @@
 # dbm-salary-grade-parser
-
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/innonazarene/dbm-salary-grade-parser.svg)](https://packagist.org/packages/innonazarene/dbm-salary-grade-parser)
 [![Tests](https://github.com/innonazarene/dbm-salary-grade-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/innonazarene/dbm-salary-grade-parser/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
