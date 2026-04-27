@@ -58,13 +58,14 @@ class SalaryGradeParserTest extends TestCase
 
     public function test_parse_pads_missing_steps_with_null(): void
     {
-        $text   = "5  17866  18000  18133";
+        $text   = "5  17866  18000  18133  18267";
         $result = SalaryGradeParser::parse($text);
 
         $this->assertSame(17866, $result[0]['step_1']);
         $this->assertSame(18000, $result[0]['step_2']);
         $this->assertSame(18133, $result[0]['step_3']);
-        $this->assertNull($result[0]['step_4']);
+        $this->assertSame(18267, $result[0]['step_4']);
+        $this->assertNull($result[0]['step_5']);
         $this->assertNull($result[0]['step_8']);
     }
 
