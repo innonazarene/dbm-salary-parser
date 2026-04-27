@@ -1,7 +1,7 @@
-# dbm-salary-parser
+# dbm-salary-grade-parser
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/innonazarene/dbm-salary-parser.svg)](https://packagist.org/packages/innonazarene/dbm-salary-parser)
-[![Tests](https://github.com/innonazarene/dbm-salary-parser/actions/workflows/tests.yml/badge.svg)](https://github.com/innonazarene/dbm-salary-parser/actions)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/innonazarene/dbm-salary-grade-parser.svg)](https://packagist.org/packages/innonazarene/dbm-salary-grade-parser)
+[![Tests](https://github.com/innonazarene/dbm-salary-grade-parser/actions/workflows/tests.yml/badge.svg)](https://github.com/innonazarene/dbm-salary-grade-parser/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 Philippine Government Salary Grade schedule as a PHP library.
@@ -22,7 +22,7 @@ composer require smalot/pdfparser
 ## Installation
 
 ```bash
-composer require innonazarene/dbm-salary-parser
+composer require innonazarene/dbm-salary-grade-parser
 ```
 
 ---
