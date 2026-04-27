@@ -134,8 +134,8 @@ class SalaryGradeParser
     private static function normalizeLines(string $text): array
     {
         $text = str_replace(["\r\n", "\r"], "\n", $text);
-        // Strip thousand separators: 14,061 -> 14061
-        $text = preg_replace('/\b(\d{1,3}),(\d{3})\b/', '$1$2', $text);
+        // Strip thousand separators (including typos with periods): 14,061 -> 14061 and 31.790 -> 31790
+        $text = preg_replace('/\b(\d{1,3})[.,](\d{3})\b/', '$1$2', $text);
         return explode("\n", $text);
     }
 
@@ -172,7 +172,7 @@ class SalaryGradeParser
             }
         }
 
-        if (count($steps) < 1 || count($steps) > 8) {
+        if (count($steps) < 4 || count($steps) > 8) {
             return null;
         }
 

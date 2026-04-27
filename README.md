@@ -13,21 +13,7 @@ Data source: **National Budget Circular No. 601 (2026)** — Department of Budge
 ## Requirements
 
 - PHP 8.1+
-- For PDF extraction: **`pdftotext`** (poppler-utils, recommended) **or** `smalot/pdfparser`
-
-### Installing pdftotext
-
-```bash
-# Ubuntu / Debian
-sudo apt install poppler-utils
-
-# macOS
-brew install poppler
-
-# Windows — download from https://github.com/oschwartz10612/poppler-windows/releases
-```
-
-### Installing smalot/pdfparser (alternative, no system dependency)
+- For PDF extraction: `smalot/pdfparser`
 
 ```bash
 composer require smalot/pdfparser
@@ -94,7 +80,7 @@ echo $text; // raw text from all pages
 
 ### How extraction works
 
-1. **`PdfExtractor::extract()`** — reads the PDF using `pdftotext -layout` (preserves table column spacing) or `smalot/pdfparser` as fallback
+1. **`PdfExtractor::extract()`** — reads the PDF using `smalot/pdfparser` and reconstructs the table rows mathematically based on the exact [X, Y] coordinates of the text on the page!
 2. **`SalaryGradeParser::parse()`** — scans each line, finds rows that start with a grade number (1–30) followed by salary amounts in the ₱10,000–₱999,999 range, validates that steps are ascending, and returns a clean array
 
 ### Using the static schedule (no PDF needed)
@@ -129,6 +115,185 @@ $results = SalaryGrade::range(40000, 45000);
 // Convenience: min and max salaries
 SalaryGrade::min(); // → 14061  (Grade 1, Step 1)
 SalaryGrade::max(); // → 226319 (Grade 30, Step 8)
+```
+
+---
+
+## Laravel Integration Example (Step-by-Step Workflow)
+
+This package is designed to easily integrate into Laravel applications. Below is the complete structure and workflow for a system where users can upload a PDF, download a generated CSV for review, and upload the reviewed CSV back to the system to be saved.
+
+### 1. Database Migration
+Create a table to store the salary tranche data:
+
+```bash
+php artisan make:migration create_salary_tranches_table
+```
+
+```php
+public function up()
+{
+    Schema::create('salary_tranches', function (Blueprint $table) {
+        $table->id();
+        $table->string('title');
+        $table->string('circular_no')->nullable();
+        $table->string('pdf_path')->nullable();
+        $table->string('csv_path')->nullable();
+        $table->json('parsed_data'); // Stores the array of salary grades
+        $table->timestamps();
+    });
+}
+```
+
+### 2. Eloquent Model
+Ensure your model casts the `parsed_data` column to an array so Laravel automatically handles the JSON serialization:
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class SalaryTranche extends Model
+{
+    protected $fillable = ['title', 'circular_no', 'pdf_path', 'csv_path', 'parsed_data'];
+
+    protected $casts = [
+        'parsed_data' => 'array',
+    ];
+}
+```
+
+### 3. API Routes
+Define the endpoints for uploading PDFs, downloading the generated CSV, and uploading the final reviewed CSV:
+
+```php
+use App\Http\Controllers\SalaryTrancheController;
+
+// Upload a PDF and generate a CSV
+Route::post('/salary-tranches', [SalaryTrancheController::class, 'store']);
+
+// Download the generated CSV for review
+Route::get('/salary-tranches/{id}/download-csv', [SalaryTrancheController::class, 'downloadCsv']);
+
+// Upload the reviewed CSV to finalize and save the data
+Route::post('/salary-tranches/upload-csv', [SalaryTrancheController::class, 'storeCsv']);
+```
+
+### 4. Controller Logic
+Create the controller to tie it all together:
+
+```php
+namespace App\Http\Controllers;
+
+use App\Models\SalaryTranche;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use PhSalaryGrade\SalaryGradeParser;
+
+class SalaryTrancheController extends Controller
+{
+    /**
+     * Step 1: Upload a PDF. The package parses it and generates a CSV.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'circular_no' => 'nullable|string|max:255',
+            'region' => 'nullable|string|max:255', // e.g. "First Class"
+            'pdf' => 'required|file|mimes:pdf|max:10240'
+        ]);
+
+        $pdfPath = $request->file('pdf')->store('salary-tranches/pdfs', 'public');
+        $fullPdfPath = Storage::disk('public')->path($pdfPath);
+
+        // Parse PDF using the package (targets a specific keyword/region if provided)
+        $parsedData = SalaryGradeParser::parseFile($fullPdfPath, $request->region);
+
+        // Generate a CSV for user review
+        $csvPath = 'salary-tranches/csvs/salary_tranche_' . time() . '.csv';
+        Storage::disk('public')->makeDirectory('salary-tranches/csvs');
+        
+        $csvFile = fopen(Storage::disk('public')->path($csvPath), 'w');
+        fputcsv($csvFile, ['Salary Grade', 'Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6', 'Step 7', 'Step 8']);
+        
+        foreach ($parsedData as $row) {
+            fputcsv($csvFile, [
+                $row['salary_grade'] ?? '', $row['step_1'] ?? '', $row['step_2'] ?? '',
+                $row['step_3'] ?? '', $row['step_4'] ?? '', $row['step_5'] ?? '',
+                $row['step_6'] ?? '', $row['step_7'] ?? '', $row['step_8'] ?? ''
+            ]);
+        }
+        fclose($csvFile);
+
+        $tranche = SalaryTranche::create([
+            'title' => $request->title,
+            'circular_no' => $request->circular_no,
+            'pdf_path' => $pdfPath,
+            'csv_path' => $csvPath,
+            'parsed_data' => $parsedData,
+        ]);
+
+        return response()->json([
+            'message' => 'PDF parsed and CSV generated.',
+            'download_csv_url' => url('/api/salary-tranches/' . $tranche->id . '/download-csv')
+        ]);
+    }
+
+    /**
+     * Step 2: Download the generated CSV for manual review/correction.
+     */
+    public function downloadCsv($id)
+    {
+        $tranche = SalaryTranche::findOrFail($id);
+        return Storage::disk('public')->download($tranche->csv_path, 'salary_table.csv');
+    }
+
+    /**
+     * Step 3: Upload the reviewed CSV. Saves data to DB and deletes the CSV automatically.
+     */
+    public function storeCsv(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'csv' => 'required|file|mimes:csv,txt|max:10240'
+        ]);
+
+        // Get the temporary uploaded file
+        $csvFile = $request->file('csv');
+        $path = $csvFile->getRealPath();
+
+        $parsedData = [];
+        if (($handle = fopen($path, 'r')) !== false) {
+            fgetcsv($handle); // Skip header
+            while (($row = fgetcsv($handle)) !== false) {
+                if (!empty($row[0])) {
+                    $parsedData[] = [
+                        'salary_grade' => (int) $row[0],
+                        'step_1' => isset($row[1]) && $row[1] !== '' ? (int) $row[1] : null,
+                        'step_2' => isset($row[2]) && $row[2] !== '' ? (int) $row[2] : null,
+                        'step_3' => isset($row[3]) && $row[3] !== '' ? (int) $row[3] : null,
+                        'step_4' => isset($row[4]) && $row[4] !== '' ? (int) $row[4] : null,
+                        'step_5' => isset($row[5]) && $row[5] !== '' ? (int) $row[5] : null,
+                        'step_6' => isset($row[6]) && $row[6] !== '' ? (int) $row[6] : null,
+                        'step_7' => isset($row[7]) && $row[7] !== '' ? (int) $row[7] : null,
+                        'step_8' => isset($row[8]) && $row[8] !== '' ? (int) $row[8] : null,
+                    ];
+                }
+            }
+            fclose($handle);
+        }
+
+        // Store to DB. The uploaded CSV file is automatically deleted by Laravel after this request.
+        $tranche = SalaryTranche::create([
+            'title' => $request->title,
+            'circular_no' => $request->circular_no ?? null,
+            'parsed_data' => $parsedData,
+        ]);
+
+        return response()->json(['message' => 'Salary tranche stored from CSV successfully!']);
+    }
+}
 ```
 
 ---
